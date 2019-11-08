@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn import metrics
@@ -124,7 +125,7 @@ if __name__ == "__main__":
 	def neural_net_train(X_train,Y_train,epochs,learn_rate,n_inputs,n_outputs,n_hidden_units,batch_size):
 		net = neural_net_initialise(n_inputs,n_hidden_units,n_outputs)
 		for i in range(epochs):
-			print('Epoch number = '+str(i))
+#			print('Epoch number = '+str(i))
 			batches = create_batches(X_train,Y_train.reshape((-1,1)),batch_size)
 			for batch in batches:
 				X_m,Y_m = batch
@@ -155,7 +156,12 @@ if __name__ == "__main__":
 	
 	def train_neural_net(X_train,Y_train,epochs = 100,learning_rate = 6e-2,hidden_units = [100],batch_size = 32):
 		n = neural_net_train(X_train,Y_train,epochs,learning_rate,X_train.shape[1],10,hidden_units,batch_size)
-		return n
+		label_pred = np.zeros(X_train.shape[0])
+		for i in range(X_train.shape[0]):
+			forward_propogation(n,X_train[i].reshape((-1,1)))
+			label_pred[i],j = np.unravel_index(n[-1].output.argmax(), n[-1].output.shape)
+		accuracy_train = metrics.accuracy_score(Y_train.T,label_pred)
+		return n,accuracy_train
 		
 	def test_neural_test(net,X_test,Y_test):
 		label_pred = np.zeros(X_test.shape[0])
@@ -166,24 +172,50 @@ if __name__ == "__main__":
 		return accuracy_test
 	
 	def hyperparameter_variation(X_train,Y_train,X_test,Y_test,param,param_var):
-		param_array = []
+		param_array_test = []
+		param_array_train = []
 		if param is "epochs":
 			for i in param_var:
-				model = train_neural_net(X_train,Y_train,epochs = i)
-				param_array.append(test_neural_test(model,X_test,Y_test))
+				print(i)
+				model,p = train_neural_net(X_train,Y_train,epochs = i)
+				param_array_test.append(test_neural_test(model,X_test,Y_test))
+				param_array_train.append(p)
 		elif param is "learning_rate":
 			for i in param_var:
-				model = train_neural_net(X_train,Y_train,learning_rate = i)
-				param_array.append(test_neural_test(model,X_test,Y_test))
+				print(i)
+				model,p = train_neural_net(X_train,Y_train,learning_rate = i)
+				param_array_test.append(test_neural_test(model,X_test,Y_test))
+				param_array_train.append(p)
 		elif param is "batch_size":
 			for i in param_var:
-				model = train_neural_net(X_train,Y_train,batch_size = i)
-				param_array.append(test_neural_test(model,X_test,Y_test))
+				print(i)
+				model,p = train_neural_net(X_train,Y_train,batch_size = i)
+				param_array_test.append(test_neural_test(model,X_test,Y_test))
+				param_array_train.append(p)
 		elif param is "hidden_units":
 			for i in param_var:
-				model = train_neural_net(X_train,Y_train,hidden_units = i)
-				param_array.append(test_neural_test(model,X_test,Y_test))
+				print(i)
+				model,p = train_neural_net(X_train,Y_train,hidden_units = i)
+				param_array_test.append(test_neural_test(model,X_test,Y_test))
+				param_array_train.append(p)
 		else:
 			raise Exception("Invalid hyperparameter")
-		return param_array
+		return param_array_test,param_array_train
 	
+	def plot_variation(param,param_var,accuracy_var_test,accuracy_var_train):
+		plt.figure(figsize=(12,9))
+		plt.plot(param_var,accuracy_var_train,c='b',label='Training Error')
+		plt.title('Training Error and Test Error for '+param+' variation')
+		plt.xlabel(param)
+		plt.ylabel('Error')
+		plt.plot(param_var,accuracy_var_test,c='r',label='Test Error')
+		plt.savefig('./Pics/'+param+'1.png')
+		plt.show()
+		
+	def main_function():
+		param = "batch_size"
+		param_var = [1,2,4,8,16,32,64]
+		test,train = hyperparameter_variation(F_train,T_train,F_test,T_test,param,param_var)
+		plot_variation(param,param_var,test,train)
+		
+	main_function()
