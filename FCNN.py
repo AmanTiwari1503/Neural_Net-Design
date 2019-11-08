@@ -154,7 +154,7 @@ if __name__ == "__main__":
 			batches.append((X_m, Y_m))
 		return batches
 	
-	def train_neural_net(X_train,Y_train,epochs = 100,learning_rate = 6e-2,hidden_units = [100],batch_size = 32):
+	def train_neural_net(X_train,Y_train,epochs = 100,learning_rate = 6e-2,hidden_units = [150],batch_size = 32):
 		n = neural_net_train(X_train,Y_train,epochs,learning_rate,X_train.shape[1],10,hidden_units,batch_size)
 		label_pred = np.zeros(X_train.shape[0])
 		for i in range(X_train.shape[0]):
@@ -208,14 +208,24 @@ if __name__ == "__main__":
 		plt.title('Training Error and Test Error for '+param+' variation')
 		plt.xlabel(param)
 		plt.ylabel('Error')
+		plt.legend(loc = 'best')
 		plt.plot(param_var,accuracy_var_test,c='r',label='Test Error')
-		plt.savefig('./Pics/'+param+'1.png')
+		plt.savefig('./Pics/'+param+'.png')
 		plt.show()
 		
 	def main_function():
-		param = "batch_size"
-		param_var = [1,2,4,8,16,32,64]
+		param = "hidden_units"
+		param_var = [[50],[100],[150],[200],[300],[400],[500]]
 		test,train = hyperparameter_variation(F_train,T_train,F_test,T_test,param,param_var)
 		plot_variation(param,param_var,test,train)
 		
-	main_function()
+	def neuron_depiction():
+		model,p = train_neural_net(F_train,T_train)
+		f = np.matmul(model[0].w,model[1].w)
+		for i in range(f.shape[1]):
+			k1 = f[:,i].reshape((28,28))
+			plt.imshow(k1,cmap = 'gray')
+			plt.savefig('./Pics/Neuron/'+str(i)+'.png')
+		
+#	main_function()
+	neuron_depiction()
