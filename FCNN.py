@@ -7,10 +7,7 @@ from sklearn import metrics
 np.set_printoptions(threshold=40)
 
 Dataset = pd.read_csv('./2017EE10436.csv',header=None);
-num_features = 784
-F = Dataset.iloc[:,:num_features].values
-s= StandardScaler()
-F = s.fit_transform(F)
+F = Dataset.iloc[:,0:-1].values
 T = Dataset.iloc[:,-1].values
 
 F_train, F_test, T_train, T_test = train_test_split(F, T, test_size=0.20,random_state=100)
@@ -163,7 +160,7 @@ if __name__ == "__main__":
 		accuracy_train = metrics.accuracy_score(Y_train.T,label_pred)
 		return n,accuracy_train
 		
-	def test_neural_test(net,X_test,Y_test):
+	def test_neural_net(net,X_test,Y_test):
 		label_pred = np.zeros(X_test.shape[0])
 		for i in range(X_test.shape[0]):
 			forward_propogation(net,X_test[i].reshape((-1,1)))
@@ -178,25 +175,25 @@ if __name__ == "__main__":
 			for i in param_var:
 				print(i)
 				model,p = train_neural_net(X_train,Y_train,epochs = i)
-				param_array_test.append(test_neural_test(model,X_test,Y_test))
+				param_array_test.append(test_neural_net(model,X_test,Y_test))
 				param_array_train.append(p)
 		elif param is "learning_rate":
 			for i in param_var:
 				print(i)
 				model,p = train_neural_net(X_train,Y_train,learning_rate = i)
-				param_array_test.append(test_neural_test(model,X_test,Y_test))
+				param_array_test.append(test_neural_net(model,X_test,Y_test))
 				param_array_train.append(p)
 		elif param is "batch_size":
 			for i in param_var:
 				print(i)
 				model,p = train_neural_net(X_train,Y_train,batch_size = i)
-				param_array_test.append(test_neural_test(model,X_test,Y_test))
+				param_array_test.append(test_neural_net(model,X_test,Y_test))
 				param_array_train.append(p)
 		elif param is "hidden_units":
 			for i in param_var:
 				print(i)
 				model,p = train_neural_net(X_train,Y_train,hidden_units = i)
-				param_array_test.append(test_neural_test(model,X_test,Y_test))
+				param_array_test.append(test_neural_net(model,X_test,Y_test))
 				param_array_train.append(p)
 		else:
 			raise Exception("Invalid hyperparameter")
@@ -226,6 +223,25 @@ if __name__ == "__main__":
 			k1 = f[:,i].reshape((28,28))
 			plt.imshow(k1,cmap = 'gray')
 			plt.savefig('./Pics/Neuron/'+str(i)+'.png')
+	
+	def accuracy_determine():
+		model,p = train_neural_net(F_train,T_train,epochs=200)
+		q = test_neural_net(model,F_test,T_test)
+		print('Train accuracy = ',p)
+		print('Test accuracy = ',q)
+	
+	def PCA_representation():
+		Data = pd.read_csv('./2017EE10436_2.csv',header=None)
+		F_sm = Data.iloc[:,0:-1].values
+		k =np.matmul(np.linalg.pinv(F),F_sm).T
+		for i in range(k.shape[0]):
+			k1 = k[i,:].reshape((28,28))
+			plt.imshow(k1,cmap = 'gray')
+			plt.savefig('./Pics/PCA/'+str(i)+'.png')
+			plt.show()
+			plt.close()
 		
 #	main_function()
-	neuron_depiction()
+#	neuron_depiction()
+#	accuracy_determine()
+	PCA_representation()
