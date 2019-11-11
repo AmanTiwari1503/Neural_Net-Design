@@ -1,10 +1,11 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-import tensorflow
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.losses import categorical_crossentropy
+from tensorflow.keras.optimizers import SGD
 
 Dataset = pd.read_csv('./2017EE10433.csv',header=None);
 F = Dataset.iloc[:,:-1].values
@@ -21,8 +22,8 @@ model = Sequential()
 model.add(Dense(125, input_dim = F_train.shape[1], activation='sigmoid'))
 model.add(Dense(10, activation='softmax'))
 
-sgd = tensorflow.keras.optimizers.SGD(lr=0.5,nesterov=True)
-model.compile(loss=tensorflow.keras.losses.categorical_crossentropy,optimizer='sgd', metrics=['accuracy'])
+sgd = SGD(lr=0.5,nesterov=True)
+model.compile(loss = categorical_crossentropy,optimizer='sgd', metrics=['accuracy'])
 model.fit(F_train, T_train, epochs = epochs, batch_size = batch_size, validation_data=(F_test, T_test), verbose = 1)
 score = model.evaluate(F_test, T_test, verbose = 2)
 print('Test loss:', score[0])
