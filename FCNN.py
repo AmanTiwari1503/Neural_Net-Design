@@ -4,13 +4,18 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn import metrics
-np.set_printoptions(threshold=40)
+import time
+#np.set_printoptions(threshold=40)
 
 Dataset = pd.read_csv('./2017EE10436.csv',header=None);
 F = Dataset.iloc[:,0:-1].values
 T = Dataset.iloc[:,-1].values
-
 F_train, F_test, T_train, T_test = train_test_split(F, T, test_size=0.20,random_state=100)
+F_not = F_test
+s = StandardScaler()
+F_train = s.fit_transform(F_train)
+F_test = s.fit_transform(F_test)
+
 
 def sigmoid(X):
 	return 1.0/(1.0 + np.exp(-X))
@@ -48,6 +53,7 @@ def sig_derivative(X):
 
 
 def relu_derivative(X):
+	X = ReLU(X) 
 	X[X>0] = 1
 	return X
 
@@ -81,10 +87,10 @@ class layer(object):
 if __name__ == "__main__":
 	def neural_net_initialise(n_inputs,n_hidden_units,n_outputs):
 		network = list()
-		ob_layer = layer(n_inputs,n_hidden_units[0],'sigmoid')
+		ob_layer = layer(n_inputs,n_hidden_units[0],'ReLU')
 		network.append(ob_layer)
 		for i in range(len(n_hidden_units)-1):
-			ob_layer = layer(n_hidden_units[i],n_hidden_units[i+1],'sigmoid')
+			ob_layer = layer(n_hidden_units[i],n_hidden_units[i+1],'ReLU')
 			network.append(ob_layer)
 		ob_layer = layer(n_hidden_units[-1],n_outputs,'softmax')
 		network.append(ob_layer)
@@ -151,7 +157,7 @@ if __name__ == "__main__":
 			batches.append((X_m, Y_m))
 		return batches
 	
-	def train_neural_net(X_train,Y_train,epochs = 100,learning_rate = 6e-2,hidden_units = [150],batch_size = 32):
+	def train_neural_net(X_train,Y_train,epochs = 150,learning_rate = 0.5,hidden_units = [150],batch_size = 32):
 		n = neural_net_train(X_train,Y_train,epochs,learning_rate,X_train.shape[1],10,hidden_units,batch_size)
 		label_pred = np.zeros(X_train.shape[0])
 		for i in range(X_train.shape[0]):
@@ -165,6 +171,14 @@ if __name__ == "__main__":
 		for i in range(X_test.shape[0]):
 			forward_propogation(net,X_test[i].reshape((-1,1)))
 			label_pred[i],j = np.unravel_index(net[-1].output.argmax(), net[-1].output.shape)
+#		for i in range(X_test.shape[0]):
+#			if(Y_test[i] == label_pred[i]):
+#				continue
+#			else:
+#				print("Actual = ",Y_test[i],"; Predicted = ",label_pred[i])
+#				plt.imshow(F_not[i].reshape((28,28)).T)
+#				plt.show()
+#				plt.close()
 		accuracy_test = metrics.accuracy_score(Y_test.T,label_pred)
 		return accuracy_test
 	
@@ -173,59 +187,85 @@ if __name__ == "__main__":
 		param_array_train = []
 		if param is "epochs":
 			for i in param_var:
-				print(i)
+				print(param,"-",i)
 				model,p = train_neural_net(X_train,Y_train,epochs = i)
-				param_array_test.append(test_neural_net(model,X_test,Y_test))
+				q = test_neural_net(model,X_test,Y_test)
+				print('Train accuracy = ',p)
+				print('Test accuracy = ',q)
 				param_array_train.append(p)
+				param_array_test.append(q)
 		elif param is "learning_rate":
 			for i in param_var:
-				print(i)
+				print(param,"-",i)
 				model,p = train_neural_net(X_train,Y_train,learning_rate = i)
-				param_array_test.append(test_neural_net(model,X_test,Y_test))
+				q = test_neural_net(model,X_test,Y_test)
+				print('Train accuracy = ',p)
+				print('Test accuracy = ',q)
 				param_array_train.append(p)
+				param_array_test.append(q)
 		elif param is "batch_size":
 			for i in param_var:
-				print(i)
+				print(param,"-",i)
 				model,p = train_neural_net(X_train,Y_train,batch_size = i)
-				param_array_test.append(test_neural_net(model,X_test,Y_test))
+				q = test_neural_net(model,X_test,Y_test)
+				print('Train accuracy = ',p)
+				print('Test accuracy = ',q)
 				param_array_train.append(p)
+				param_array_test.append(q)
 		elif param is "hidden_units":
 			for i in param_var:
-				print(i)
+				print(param,"-",i)
 				model,p = train_neural_net(X_train,Y_train,hidden_units = i)
-				param_array_test.append(test_neural_net(model,X_test,Y_test))
+				q = test_neural_net(model,X_test,Y_test)
+				print('Train accuracy = ',p)
+				print('Test accuracy = ',q)
 				param_array_train.append(p)
+				param_array_test.append(q)
 		else:
 			raise Exception("Invalid hyperparameter")
 		return param_array_test,param_array_train
 	
 	def plot_variation(param,param_var,accuracy_var_test,accuracy_var_train):
-		plt.figure(figsize=(12,9))
-		plt.plot(param_var,accuracy_var_train,c='b',label='Training Error')
-		plt.title('Training Error and Test Error for '+param+' variation')
-		plt.xlabel(param)
-		plt.ylabel('Error')
-		plt.legend(loc = 'best')
-		plt.plot(param_var,accuracy_var_test,c='r',label='Test Error')
-		plt.savefig('./Pics/'+param+'.png')
-		plt.show()
+		if param is 'learning_rate':
+			plt.figure(figsize=(12,9))
+			plt.plot(np.log10(param_var),accuracy_var_train,c='b',label='Training Error')
+			plt.plot(np.log10(param_var),accuracy_var_test,c='r',label='Test Error')
+			plt.title('Training Error and Test Error for '+param+' variation')
+			plt.xlabel(param)
+			plt.ylabel('Error')
+			plt.legend(loc = 'best')
+			plt.savefig('./Pics/ReLU_'+param+'.png')
+			plt.show()
+		else:
+			plt.figure(figsize=(12,9))
+			plt.plot(param_var,accuracy_var_train,c='b',label='Training Error')
+			plt.plot(param_var,accuracy_var_test,c='r',label='Test Error')
+			plt.title('Training Error and Test Error for '+param+' variation')
+			plt.xlabel(param)
+			plt.ylabel('Error')
+			plt.legend(loc = 'best')
+			plt.savefig('./Pics/ReLU_'+param+'.png')
+			plt.show()
 		
 	def main_function():
-		param = "hidden_units"
-		param_var = [[50],[100],[150],[200],[300],[400],[500]]
+		param = "epochs"
+		param_var = [10,20,30,50,100,150,200,250,300]
 		test,train = hyperparameter_variation(F_train,T_train,F_test,T_test,param,param_var)
 		plot_variation(param,param_var,test,train)
 		
 	def neuron_depiction():
-		model,p = train_neural_net(F_train,T_train)
-		f = np.matmul(model[0].w,model[1].w)
-		for i in range(f.shape[1]):
-			k1 = f[:,i].reshape((28,28))
+		model,p = train_neural_net(F_train,T_train,epochs = 100)
+		f = np.matmul(model[0].w,model[1].w).T
+		f = s.fit_transform(f)
+		for i in range(f.shape[0]):
+			k1 = f[i,:].reshape((28,28))
 			plt.imshow(k1,cmap = 'gray')
-			plt.savefig('./Pics/Neuron/'+str(i)+'.png')
+#			plt.savefig('./Pics/Neuron/'+str(i)+'.png')
+			plt.show()
+			plt.close()
 	
 	def accuracy_determine():
-		model,p = train_neural_net(F_train,T_train,epochs=200)
+		model,p = train_neural_net(F_train,T_train,hidden_units=[125,50])
 		q = test_neural_net(model,F_test,T_test)
 		print('Train accuracy = ',p)
 		print('Test accuracy = ',q)
@@ -234,14 +274,20 @@ if __name__ == "__main__":
 		Data = pd.read_csv('./2017EE10436_2.csv',header=None)
 		F_sm = Data.iloc[:,0:-1].values
 		k =np.matmul(np.linalg.pinv(F),F_sm).T
+		print(np.mean(k))
+		print(np.std(k))
+		l1 = np.mean(k)-0.0025
+		l2 = np.mean(k)+0.0025
+		k[k<l1] = 255
+		k[k>l2] = 0
 		for i in range(k.shape[0]):
 			k1 = k[i,:].reshape((28,28))
 			plt.imshow(k1,cmap = 'gray')
-			plt.savefig('./Pics/PCA/'+str(i)+'.png')
+#			plt.savefig('./Pics/PCA/'+str(i)+'.png')
 			plt.show()
 			plt.close()
 		
 #	main_function()
 #	neuron_depiction()
-#	accuracy_determine()
-	PCA_representation()
+	accuracy_determine()
+#	PCA_representation()
